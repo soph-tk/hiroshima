@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset='utf-8' />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Hiroshima</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.76.1/dist/L.Control.Locate.css" integrity="sha256-IRbQk2AAM3ryBTNRNbenTODKPp5TLJi8zI11fFKzelg=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-legend@1.0.2/leaflet-legend.css" integrity="sha256-C6OYA20nOuMQHmGmejAYGCLEAxsE7IuITqPiVLXfm/c=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.EasyButton/2.4.0/easy-button.css" integrity="sha512-aiVWmB2G8oV+XfHo1CR6hEAxzCl48Lrl3UBzQ6P+BEMkT8qY1tGecdQx6x/X8i9cCVrwQU9ipsOsZlNkRh9n7w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css" integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style type="text/css">
+        html, body {
+            height: 100%;
+            width: 100vw;
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        .cursor {
+            position: absolute;
+            margin: auto;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            left: 0;
+            z-index: 1000;
+        }
+
+        /*Legend specific*/
+        .legend {
+            padding: 6px 8px;
+            font: 12px Arial, Helvetica, sans-serif;
+            background: white;
+            background: rgba(255, 255, 255, 0.9);
+            /*box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);*/
+            /*border-radius: 5px;*/
+            line-height: 18px;
+            color: #555;
+        }
+        .legend h4 {
+            text-align: center;
+            font-size: 14px;
+            margin: 2px 12px 6px;
+            color: #777;
+        }
+        .legend span {
+            position: relative;
+            bottom: 3px;
+        }
+        .legend i {
+            width: 18px;
+            height: 12px;
+            float: left;
+            margin: 0 8px 0 0;
+            opacity: 0.7;
+        }
+        .legend i.icon {
+            background-size: 18px;
+            background-color: rgba(255, 255, 255, 1);
+        }
+
+        #legend_controller {
+            position: absolute;
+            margin: 12px;
+            right: 0;
+            bottom: 280px;
+            z-index: 1000;
+        }
+
+    </style>
+</head>
+<body>
+    <div id='map'>
+        <!-- <img class='cursor' src='./img/940676.png' width='120px' height='120px'> -->
+        <!-- <img id='legend_controller' src='./img/arrow-down-drop-circle.png'> -->
+    </div>
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==" crossorigin=""></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-hash/0.2.1/leaflet-hash.min.js" integrity="sha512-0A4MbfuZq5Au9EdpI1S5rUTXlibNBi8CuZ/X3ycwXyZiCjNzpiO9YH6EMqPgzZm6vfNCuZStBQHjnO17nIC0IQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.76.1/src/L.Control.Locate.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-legend@1.0.2/leaflet-legend.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.EasyButton/2.4.0/easy-button.min.js" integrity="sha512-Tndo4y/YJooD/mGXS9D6F1YyBcSyrWnnSWQ5Z9IcKt6bljicjyka9qcP99qMFbQ5+omfOtwwIapv1DjBCZcTJQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/js/all.min.js" integrity="sha512-8pHNiqTlsrRjVD4A/3va++W1sMbUHwWxxRPWNyVlql3T+Hgfd81Qc6FC5WMXDC+tSauxxzp1tgiAvSKFu1qIlA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="./keys.js"></script>
+    <script>
+        const tileSize = 256;
+        const urlXyz = '{z}/{x}/{y}.png';
+        const urlOsm = 'https://tile.openstreetmap.jp/styles/maptiler-basic-ja/{z}/{x}/{y}@2x.png';
+        const urlShinsuishin = 'https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin_data/';
+        const urlDosekiryukeikaikuiki = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/';
+        const urlKyukeishakeikaikuiki = 'https://disaportaldata.gsi.go.jp/raster/05_kyukeishakeikaikuiki/';
+        const urlJisuberikeikaikuiki = 'https://disaportaldata.gsi.go.jp/raster/05_jisuberikeikaikuiki/';
+        const urlKyukeisyachihoukai = 'https://disaportaldata.gsi.go.jp/raster/05_kyukeisyachihoukai/';
+        const urlDosekiryukikenkeiryu = 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukikenkeiryu/';
+        const urlJisuberikikenkasyo = 'https://disaportaldata.gsi.go.jp/raster/05_jisuberikikenkasyo/';
+
+        const urlMfapiAddrname = 'https://mapfanapi-search.p.rapidapi.com/addrname?';
+        const urlMfapiCalcroute = 'https://mapfanapi-route.p.rapidapi.com/calcroute?';
+
+        let current = null;
+
+        // ▼ベースレイヤー
+        let layerBaseOptions = {
+            maxZoom: 21,
+            minZoom: 5,
+            attribution: '© OpenStreetMap contributors',
+        };
+
+        let baseLayer = L.tileLayer(urlOsm, layerBaseOptions);
+
+        let map = L.map('map', {
+            center: L.latLng(34.39761979445599,132.47536305110998), 
+            zoom: 14,
+            layers: [baseLayer]
+        });
+
+        // ▼諸設定
+        L.control.scale({ maxWidth: 200, position: 'bottomleft', imperial: false }).addTo(map);
+
+        let hash = new L.Hash(map);
+
+        L.control.locate({
+            keepCurrentZoomLevel: true,
+        }).addTo(map);
+
+        var legend = L.control({
+            position: 'bottomright',
+            collapsed: true,
+        });
+        legend.onAdd = function(map) {
+            var div = L.DomUtil.create("div", "legend");
+            div.innerHTML += "<h4>洪水浸水想定区域</h4>";
+            div.innerHTML += '<i style="background: #DC7ADC"></i><span>20.0m以上</span><br>';
+            div.innerHTML += '<i style="background: #F285C9"></i><span>10.0～20.0m</span><br>';
+            div.innerHTML += '<i style="background: #FF9191"></i><span>5.0～10.0m</span><br>';
+            div.innerHTML += '<i style="background: #FFB7B7"></i><span>3.0～5.0m</span><br>';
+            div.innerHTML += '<i style="background: #FFD8C0"></i><span>0.5～3.0m</span><br>';
+            div.innerHTML += '<i style="background: #F7F5A9"></i><span>0.5m未満</span><br>';
+            div.innerHTML += "<h4>土砂災害警戒区域</h4>";
+            div.innerHTML += '<i style="background: #FB684C"></i><span>急傾斜地崩壊 特別警戒区域</span><br>';
+            div.innerHTML += '<i style="background: #FFED4C"></i><span>急傾斜地崩壊 警戒区域</span><br>';
+            div.innerHTML += '<i style="background: #C04C63"></i><span>土石流 特別警戒区域</span><br>';
+            div.innerHTML += '<i style="background: #EDD86F"></i><span>土石流 警戒区域</span><br>';
+            div.innerHTML += '<i style="background: #CA4C95"></i><span>地すべり 特別警戒区域</span><br>';
+            div.innerHTML += '<i style="background: #FFB74C"></i><span>地すべり 警戒区域</span><br>';
+            return div;
+        };
+        legend.addTo(map);
+        let legendVisible = true;
+
+        let stateChangingButton = L.easyButton({
+            states: [{
+                stateName: 'on',
+                icon: 'fa-solid fa-toggle-on',
+                title: 'on',
+                onClick: (btn, map) => {
+                    legend.remove();
+                    btn.state('off');
+                }
+            }, {
+                stateName: 'off',
+                icon: 'fa-solid fa-toggle-off',
+                title: 'off',
+                onClick: (btn, map) => {
+                    legend.addTo(map);
+                    btn.state('on');
+                }
+            }]
+        });
+        stateChangingButton.addTo(map);
+
+        // ▼オーバーレイ
+        let layerOverlayOptions = {
+            maxZoom: 17,
+            minZoom: 2,
+            opacity: 0.7,
+        };
+
+        // ▼▼洪水浸水想定区域
+        let shinsuishin = L.tileLayer(urlShinsuishin + urlXyz, layerOverlayOptions);
+
+        // 土砂災害警戒区域（土石流）
+        let dosekiryukeikaikuiki = L.tileLayer(urlDosekiryukeikaikuiki + urlXyz, layerOverlayOptions);
+        // 土砂災害警戒区域（急傾斜地の崩壊）
+        let kyukeishakeikaikuiki = L.tileLayer(urlKyukeishakeikaikuiki + urlXyz, layerOverlayOptions);
+        // 土砂災害警戒区域（地すべり）
+        let jisuberikeikaikuiki = L.tileLayer(urlJisuberikeikaikuiki + urlXyz, layerOverlayOptions);
+        // 急傾斜地崩壊危険箇所
+        let kyukeisyachihoukai = L.tileLayer(urlKyukeisyachihoukai + urlXyz, layerOverlayOptions);
+        // 土石流危険渓流
+        let dosekiryukikenkeiryu = L.tileLayer(urlDosekiryukikenkeiryu + urlXyz, layerOverlayOptions);
+        // 地すべり危険箇所
+        let jisuberikikenkasyo = L.tileLayer(urlJisuberikikenkasyo + urlXyz, layerOverlayOptions);
+        // 土砂災害系レイヤーグループ
+        let dosyaGroup = L.layerGroup([dosekiryukeikaikuiki, kyukeishakeikaikuiki, jisuberikeikaikuiki, kyukeisyachihoukai, dosekiryukikenkeiryu, jisuberikikenkasyo]);
+
+        let overlayLayerControls = {
+            '浸水被害': shinsuishin,
+            '土砂災害': dosyaGroup,
+        };
+
+        let layerControl = L.control.layers(null, overlayLayerControls, {
+            collapsed: false,
+        }).addTo(map);
+
+        // ▼▼学区
+        let gakkuGroup = L.layerGroup([]);
+        let gakkuPolygon = loadGeoJson('./data/geojson/gakku_polygon.geojson', gakkuGroup);
+        let gakkuPoint = loadGeoJson('./data/geojson/gakku_point.geojson', gakkuGroup);
+        layerControl.addOverlay(gakkuGroup, '学区');
+
+        // ▼▼駅
+        let stationPoint = loadGeoJson('./data/geojson/eki.geojson', null);
+
+        function loadGeoJson(path, group) {
+            fetch(path)
+                .then(response => response.json())
+                .then(data => {
+                    let geoJson = L.geoJson(data, {
+                        pointToLayer: (feature, latlng) => {
+                            if('A27_001' in feature.properties) {
+                                let myIcon = L.icon({
+                                    iconUrl: './img/gakkou.png',
+                                    iconSize: [48, 48],
+                                    popupAnchor: [0, -24],
+                                });
+                                return L.marker(latlng, {
+                                    icon: myIcon
+                                });
+                            }
+                            else if('station_code' in feature.properties) {
+                                let myIcon = L.icon({
+                                    iconUrl: './img/station_other.png',
+                                    iconSize: [24, 24],
+                                    popupAnchor: [0, -12],
+                                });
+
+                                switch(feature.properties.company_code) {
+                                    // JR
+                                    case 1:
+                                        myIcon.options.iconUrl = './img/station_jr.png';
+                                        break;
+                                    // アストラムライン
+                                    case 126:
+                                        myIcon.options.iconUrl = './img/station_astramline.png';
+                                        break;
+                                    // 路面電車
+                                    case 133:
+                                        myIcon.options.iconUrl = './img/station_tram.png';
+                                        break;
+                                    default:
+                                        break;
+                                }
+                                return L.marker(latlng, {
+                                    icon: myIcon,
+                                });
+                            }
+                        },
+                        style: feature => {
+                            if(feature.geometry.type === 'MultiPolygon') {
+                                let color = (Math.random() * 0xFFFFFF | 0).toString(16);
+                                let randomColor = '#' + ('000000' + color).slice(-6);
+                                return {
+                                    weight: 3,
+                                    opacity: 0.2,
+                                    fillOpacity: 0.2,
+                                    color: '#000000',
+                                    fillColor: randomColor,
+                                };
+                            }
+                        },
+                        onEachFeature: (feature, layer) => {
+                            if(feature.geometry.type === 'MultiPolygon') {
+                                layer.bindPopup(feature.properties.A27_006 + ' ' + feature.properties.A27_007);
+
+                                layer.on('contextmenu', e => {
+                                    map.panTo(e.latlng);
+                                    if(map.hasLayer(current)) {
+                                        map.removeLayer(current);
+                                    }
+                                    current = L.marker(e.latlng).addTo(map);
+                                    let school = feature.properties.A27_006 + ' ' + feature.properties.A27_007;
+
+                                    // let z = map.getZoom();
+                                    // // 
+                                    // let x = lon2tile(e.latlng.lng, z);
+                                    // let y = lat2tile(e.latlng.lat, z);
+
+                                    // let lt = L.latLng(tile2lat(y, z), tile2long(x, z));
+                                    // L.marker(lt).addTo(map)
+                                    // let rb = L.latLng(tile2lat(y + 1, z), tile2long(x + 1, z));
+                                    // L.marker(rb).addTo(map)
+
+                                    // let lngDiff = (rb.lng - lt.lng);
+                                    // let latDiff = (lt.lat - rb.lat);
+
+                                    // let pointX = (e.latlng.lng - lt.lng) / lngDiff * 100 * 256;
+                                    // let pointY = (e.latlng.lat - rb.lat) / latDiff * 100 * 256;
+
+                                    // console.log(pointX + ', ' + pointY)
+
+                                    // let img = document.createElement('img');
+                                    // // img.crossOrigin = 'anonymous';
+                                    // img.crossOrigin = "Anonymous";
+                                    // img.src = urlShinsuishin + z + '/' + x + '/' + y + '.png';
+                                    // img.width = tileSize;
+                                    // img.height = tileSize;
+                                    // img.onerror = function() {
+                                    //     img.src = '';
+                                    // }
+
+                                    // if(img.src.length === 0) {
+                                    //     return;
+                                    // }
+                                    // let canvas = document.createElement('canvas');
+                                    // canvas.width = tileSize;
+                                    // canvas.height = tileSize;
+
+                                    // if(canvas.getContext && canvas.getContext('2d').createImageData) {
+                                    //     let ctx = canvas.getContext('2d');
+                                    //     ctx.drawImage(img, 0, 0);
+                                    //     let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                                    //     console.log(imageData)
+                                    // }
+
+                                    const optionsAddrname = {
+                                        method: 'GET',
+                                        headers: {
+                                            'X-RapidAPI-Key': getKey(),
+                                            'X-RapidAPI-Host': 'mapfanapi-search.p.rapidapi.com'
+                                        }
+                                    };
+                                    const optionsCalcroute = {
+                                        method: 'GET',
+                                        headers: {
+                                            'X-RapidAPI-Key': getKey(),
+                                            'X-RapidAPI-Host': 'mapfanapi-route.p.rapidapi.com'
+                                        }
+                                    };
+                                    const parameterAddrname = {
+                                        lonlat: e.latlng.lng + ',' + e.latlng.lat,
+                                        level: 4,
+                                    };
+                                    const queryAddrname = new URLSearchParams(parameterAddrname);
+
+                                    const parameterCalcroute = {
+                                        start: e.latlng.lng + ',' + e.latlng.lat,
+                                        destination: feature.properties.lng + ',' + feature.properties.lat,
+                                        priority: 100,
+                                    };
+                                    const queryCalcroute = new URLSearchParams(parameterCalcroute);
+
+                                    let div = '';
+
+                                    fetch(urlMfapiAddrname + queryAddrname, optionsAddrname)
+                                        .then(response => response.json())
+                                        .then(response => {
+                                            if(response.status === 'success') {
+                                                div += '出発地：' + response.address + '<br>';
+                                            }
+                                            return fetch(urlMfapiCalcroute + queryCalcroute, optionsCalcroute)
+                                        })
+                                        .then(response => response.json())
+                                        .then(response => {
+                                            console.log(response)
+                                            // Googleマップストリートビューのリンク埋め込む？
+                                        })
+                                        .catch(err => {
+                                            current.bindPopup(divAddrname);
+                                        });
+                                });
+                            }
+                            else if(feature.geometry.type === 'Point') {
+                                if('A27_001' in feature.properties) {
+                                    layer.bindPopup(feature.properties.A27_002 + ' ' + feature.properties.A27_003);
+                                }
+                                else if('station_code' in feature.properties) {
+                                    layer.bindPopup(feature.properties.station_name + '（' + feature.properties.line_name + '）');
+                                }
+                            }
+                        }
+                    });
+                    if(group) {
+                        group.addLayer(geoJson);
+                    }
+                    else {
+                        geoJson.addTo(map);
+                    }
+                })
+        }
+
+        // https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#ECMAScript_(JavaScript/ActionScript,_etc.)
+        function lon2tile(lon,zoom) {
+            return (Math.floor((lon+180)/360*Math.pow(2,zoom)));
+        }
+        function lat2tile(lat,zoom) {
+            return (Math.floor((1-Math.log(Math.tan(lat*Math.PI/180) + 1/Math.cos(lat*Math.PI/180))/Math.PI)/2 *Math.pow(2,zoom)));
+        }
+        function tile2long(x,z) {
+            return (x/Math.pow(2,z)*360-180);
+        }
+        function tile2lat(y,z) {
+            var n=Math.PI-2*Math.PI*y/Math.pow(2,z);
+            return (180/Math.PI*Math.atan(0.5*(Math.exp(n)-Math.exp(-n))));
+        }
+
+    </script>
+</body>
+</html>
