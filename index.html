@@ -21,7 +21,7 @@
             height: 100%;
             position: relative;
         }
-        .cursor {
+        /* .cursor {
             position: absolute;
             margin: auto;
             top: 0;
@@ -29,7 +29,7 @@
             right: 0;
             left: 0;
             z-index: 1000;
-        }
+        } */
 
         /*Legend specific*/
         .legend {
@@ -72,12 +72,41 @@
             z-index: 1000;
         }
 
+        #modal{
+            z-index: 2000;
+            position: relative;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            display: none;
+        }
+        /* #inputKey {
+            position: absolute;
+            margin: auto;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            left: 0;
+            z-index: 2001;
+        } */
+
     </style>
 </head>
 <body>
     <div id='map'>
         <!-- <img class='cursor' src='./img/940676.png' width='120px' height='120px'> -->
         <!-- <img id='legend_controller' src='./img/arrow-down-drop-circle.png'> -->
+        <!-- <div id='app'> -->
+            <div id='modal'>
+                <input id='inputKey' type='text' />
+                <button id='putKey'>セット</button>
+            </div>
+        <!-- </div> -->
     </div>
     <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==" crossorigin=""></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-hash/0.2.1/leaflet-hash.min.js" integrity="sha512-0A4MbfuZq5Au9EdpI1S5rUTXlibNBi8CuZ/X3ycwXyZiCjNzpiO9YH6EMqPgzZm6vfNCuZStBQHjnO17nIC0IQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -85,8 +114,51 @@
     <script src="https://cdn.jsdelivr.net/npm/leaflet-legend@1.0.2/leaflet-legend.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.EasyButton/2.4.0/easy-button.min.js" integrity="sha512-Tndo4y/YJooD/mGXS9D6F1YyBcSyrWnnSWQ5Z9IcKt6bljicjyka9qcP99qMFbQ5+omfOtwwIapv1DjBCZcTJQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/js/all.min.js" integrity="sha512-8pHNiqTlsrRjVD4A/3va++W1sMbUHwWxxRPWNyVlql3T+Hgfd81Qc6FC5WMXDC+tSauxxzp1tgiAvSKFu1qIlA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="./keys.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script> -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
     <script>
+        // let vue = new Vue({
+        //     el: '#app',
+        //     data: {
+        //         showContent: false,
+        //         key: '',
+        //     },
+        //     methods: {
+        //         openModal: () => {
+        //             this.showContent = true;
+        //         },
+        //         closeModal: () => {
+        //             this.showContent = false;
+        //         },
+        //         putLocalStorage: () => {
+        //             console.log(this)
+        //             if(this.data.key.length === 0) {
+        //                 localStorage.setItem('removeItem', this.data.key);
+        //                 this.closeModal();
+        //             }
+        //             else {
+        //                 alert('入力してください');
+        //             }
+        //         },
+        //     }
+        // });
+
+        let xRapidApiKey = localStorage.getItem('xRapidApiKey');
+        if(!xRapidApiKey) {
+            $('#modal').show();
+        }
+
+        $('#putKey').on('click', () => {
+            let value = $('#inputKey').val();
+            if(value.length > 0) {
+                localStorage.setItem('xRapidApiKey', value);
+                $('#modal').hide();
+            }
+            else {
+                alert('入力してください')
+            }
+        })
+
         const tileSize = 256;
         const urlXyz = '{z}/{x}/{y}.png';
         const urlOsm = 'https://tile.openstreetmap.jp/styles/maptiler-basic-ja/{z}/{x}/{y}@2x.png';
@@ -173,6 +245,10 @@
         });
         stateChangingButton.addTo(map);
 
+        L.easyButton('fa-regular fa-pen-to-square', (btn, map) => {
+            $('#modal').show();
+        }).addTo(map);
+
         // ▼オーバーレイ
         let layerOverlayOptions = {
             maxZoom: 17,
@@ -225,8 +301,8 @@
                             if('A27_001' in feature.properties) {
                                 let myIcon = L.icon({
                                     iconUrl: './img/gakkou.png',
-                                    iconSize: [48, 48],
-                                    popupAnchor: [0, -24],
+                                    iconSize: [36, 36],
+                                    popupAnchor: [0, -18],
                                 });
                                 return L.marker(latlng, {
                                     icon: myIcon
@@ -330,14 +406,14 @@
                                     const optionsAddrname = {
                                         method: 'GET',
                                         headers: {
-                                            'X-RapidAPI-Key': getKey(),
+                                            'X-RapidAPI-Key': localStorage.getItem('xRapidApiKey'),
                                             'X-RapidAPI-Host': 'mapfanapi-search.p.rapidapi.com'
                                         }
                                     };
                                     const optionsCalcroute = {
                                         method: 'GET',
                                         headers: {
-                                            'X-RapidAPI-Key': getKey(),
+                                            'X-RapidAPI-Key': localStorage.getItem('xRapidApiKey'),
                                             'X-RapidAPI-Host': 'mapfanapi-route.p.rapidapi.com'
                                         }
                                     };
