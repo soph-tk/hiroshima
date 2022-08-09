@@ -19,7 +19,6 @@
         #map {
             width: 100%;
             height: 100%;
-            position: relative;
         }
         /* .cursor {
             position: absolute;
@@ -74,27 +73,31 @@
 
         #modal{
             z-index: 2000;
-            position: relative;
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
+            /* display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: center; */
+            /* display: table-cell; */
+            display: table-cell;
+            text-align: center;
+            vertical-align: middle;
             display: none;
         }
-        /* #inputKey {
-            position: absolute;
-            margin: auto;
-            top: 0;
-            bottom: 0;
-            right: 0;
-            left: 0;
-            z-index: 2001;
-        } */
-
+        #inputKey {
+            padding: 0;
+            line-height: 22px;
+            height: 24px;
+            width: 80%;
+            margin-top: 50%;
+        }
+        #putKey {
+            margin-top: 8px;
+        }
     </style>
 </head>
 <body>
@@ -102,11 +105,15 @@
         <!-- <img class='cursor' src='./img/940676.png' width='120px' height='120px'> -->
         <!-- <img id='legend_controller' src='./img/arrow-down-drop-circle.png'> -->
         <!-- <div id='app'> -->
-            <div id='modal'>
-                <input id='inputKey' type='text' />
-                <button id='putKey'>セット</button>
-            </div>
         <!-- </div> -->
+    </div>
+    <div id='modal'>
+        <div>
+            <input id='inputKey' type='text' />
+        </div>
+        <div>
+            <button id='putKey'>セット</button>
+        </div>
     </div>
     <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==" crossorigin=""></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-hash/0.2.1/leaflet-hash.min.js" integrity="sha512-0A4MbfuZq5Au9EdpI1S5rUTXlibNBi8CuZ/X3ycwXyZiCjNzpiO9YH6EMqPgzZm6vfNCuZStBQHjnO17nIC0IQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -174,6 +181,8 @@
         const urlMfapiCalcroute = 'https://mapfanapi-route.p.rapidapi.com/calcroute?';
 
         let current = null;
+        let routeEdge = null;
+        let routeMain = null;
 
         // ▼ベースレイヤー
         let layerBaseOptions = {
@@ -430,23 +439,47 @@
                                     };
                                     const queryCalcroute = new URLSearchParams(parameterCalcroute);
 
-                                    let div = '';
-
                                     fetch(urlMfapiAddrname + queryAddrname, optionsAddrname)
                                         .then(response => response.json())
                                         .then(response => {
                                             if(response.status === 'success') {
-                                                div += '出発地：' + response.address + '<br>';
+                                                current.bindPopup(response.address);
                                             }
                                             return fetch(urlMfapiCalcroute + queryCalcroute, optionsCalcroute)
                                         })
                                         .then(response => response.json())
                                         .then(response => {
-                                            console.log(response)
-                                            // Googleマップストリートビューのリンク埋め込む？
+                                            if(response.status === 'success') {
+                                                let set = new Set();
+                                                for(let i=0; i<response.shape.length; i++) {
+                                                    let shape = response.shape[i];
+                                                    for(let j=0; j<shape.shapePoints.length; j++) {
+                                                        let shapePoint = shape.shapePoints[j];
+                                                        set.add(L.latLng(shapePoint.lat, shapePoint.lon));
+                                                    }
+                                                }
+
+                                                if(map.hasLayer(routeEdge)) {
+                                                    map.removeLayer(routeEdge);
+                                                }
+                                                if(map.hasLayer(routeMain)) {
+                                                    map.removeLayer(routeMain);
+                                                }
+
+                                                routeEdge = L.polyline(Array.from(set), {
+                                                    color: 'black',
+                                                    weight: 7,
+                                                }).addTo(map);
+                                                routeMain = L.polyline(Array.from(set), {
+                                                    color: 'lime',
+                                                    weight: 5,
+                                                }).addTo(map);
+
+                                                let distance = response.summary.totalDistance > 1000 ? Math.round((response.summary.totalDistance / 1000) * 100) / 100  + ' [km]': Math.round(response.summary.totalDistance) + ' [m]';
+                                                routeMain.bindPopup(distance);
+                                            }
                                         })
                                         .catch(err => {
-                                            current.bindPopup(divAddrname);
                                         });
                                 });
                             }
